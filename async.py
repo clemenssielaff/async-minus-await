@@ -73,19 +73,48 @@ class Scheduler:
                     cls.call_soon(instruction.task)
 
 
-def producer(n: int):
-    yield Sleep(1)
-    yield Result(n - 1)
+class AsyncQueue:
+    def __init__(self):
+        self.items: List[Any] = list()
+        self.waiting: List[Task] = list()
+
+    def put(self, item: Any):
+        self.items.append(item)
+        if self.waiting:
+            Scheduler.call_soon(self.waiting.pop(0))
+
+    def get(self) -> Task:
+        def receive():
+            while not self.items:
+                self.waiting.append(task)
+                yield
+            yield Result(self.items.pop(0))
+
+        task = Task(receive())
+        return task
 
 
-def countdown(name: str, x: int):
-    while x >= 0:
-        print(name, x)
-        task = Task(producer(x))
+def producer(n: int, queue: AsyncQueue):
+    while n >= 0:
+        queue.put(n)
+        yield Sleep(1)
+        n -= 1
+
+
+def consumer(name: str, queue: AsyncQueue):
+    while True:
+        task = queue.get()
         yield Await(task)
-        x = task.result
+        print(name, task.result)
+        if task.result == 0:
+            return
 
 
-Scheduler.call_soon(Task(countdown("Alice ", 3)))
-Scheduler.call_soon(Task(countdown("Bob ", 3)))
+bobs_queue = AsyncQueue()
+alices_queue = AsyncQueue()
+
+Scheduler.call_soon(Task(producer(3, bobs_queue)))
+Scheduler.call_soon(Task(consumer("Alice", alices_queue)))
+Scheduler.call_soon(Task(producer(3, alices_queue)))
+Scheduler.call_soon(Task(consumer("Bob", bobs_queue)))
 Scheduler.run()

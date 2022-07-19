@@ -1,12 +1,21 @@
 # Ergänzendes Material zum Artikel "Async Minus Await".
 
 Sie finden den gesamten Quelltext des Beispiels in der Datei `async.py`.
-Jeder commit in diesem Repo ist eine Momentaufnahme zu dem der Code funktionsfähig ist.
-Das heißt, es gibt zum Beispiel den Commit "2.2", aber da die Zwischenschritte kein lauffähiges Programm darstellen, ist der nächste Commit erst wieder "3.5".
+
+Jeder tag in diesem Repo ist eine Momentaufnahme zu dem der Code funktionsfähig ist:
+
+* [1.1 - Not Async Yet](https://github.com/clemenssielaff/async-minus-await/commit/008b935d02aab20b6eb47bda861ecd9e879d5494)
+* [1.2 - The Scheduler](https://github.com/clemenssielaff/async-minus-await/commit/47bdf3aac5cccbe0105bf6498a4355681cda690e)
+* [1.3 - Wait Smarter, Not Harder](https://github.com/clemenssielaff/async-minus-await/commit/3d01023c1b2630800f389d96b0dc0307e965bb0e)
+* [2.2 - Generator Handling](https://github.com/clemenssielaff/async-minus-await/commit/da71639c0d600010fc14ae2d23224f6f363ce289)
+* [3.5 - Consumer / Producer](https://github.com/clemenssielaff/async-minus-await/commit/b5555390f2e6260a2cfc559192e2edfbecc7571e)
+* [4.4 - Wrap Up](https://github.com/clemenssielaff/async-minus-await/commit/a0ca15bc9546b79ec4bacc1331a2b0677ea71204)
+
+[Hier](https://github.com/clemenssielaff/async-minus-await/compare) können Sie beliebige Tags miteinander vergleichen.
 
 ## Referenz
 
-Die letzte Version des `async.py` snippets steht im Vergleich zur Referenzimplentierung mit Python's built-in `asyncio` module und den `async` und `await` keywords:
+Zum Vergleich mit der letzten Version von `async.py`, hier eine alternative Implementierung mit Python's built-in `asyncio` module und den `async` und `await` keywords:
 
 ```python
 import asyncio

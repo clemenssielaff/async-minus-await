@@ -1,5 +1,6 @@
 """
-Listing 5: Wait Smarter, Not Harder
+Listing 6: Countdown als Generator-Funktion
+Listing 8: Scheduler mit Generatoren
 
 Um sich alle Code-Beispiele in diesem Artikel ansehen und vergleichen zu können,
 besuchen Sie bitte:
@@ -10,15 +11,15 @@ from typing import *
 
 
 class Scheduler:
-    ready: List[Callable] = list()
-    sleeping: List[Tuple[float, Callable]] = list()
+    ready: List[Generator] = list()
+    sleeping: List[Tuple[float, Generator]] = list()
 
     @classmethod
-    def call_soon(cls, func: Callable):
+    def call_soon(cls, func: Generator):
         cls.ready.append(func)
 
     @classmethod
-    def call_later(cls, delay: float, func: Callable):
+    def call_later(cls, delay: float, func: Generator):
         deadline = now() + delay
         cls.sleeping.append((deadline, func))
         cls.sleeping.sort()
@@ -34,27 +35,27 @@ class Scheduler:
                 cls.call_soon(func)
             while cls.ready:
                 current = cls.ready.pop(0)
-                current()
+                try:
+                    delay = next(current)
+                except StopIteration:
+                    continue
+                if delay is not None:
+                    cls.call_later(delay, current)
 
 
 def countdown(name: str, n: int):
-    if n >= 0:
+    while n >= 0:
         print(name, n)
-        # no sleep
-        Scheduler.call_later(1, lambda: countdown(name, n - 1))
+        yield 1
+        n -= 1
 
 
-Scheduler.call_soon(lambda: countdown("Alice", 3))
-Scheduler.call_soon(lambda: countdown("Bob  ", 3))
+Scheduler.call_soon(countdown("Alice", 3))
+Scheduler.call_soon(countdown("Bob  ", 3))
 Scheduler.run()
 
 """
-Die Ausführung dieses Programms dauert 4 Sekunden (3 Sekunden bis zum Ende des
-Countdowns, eine weitere Sekunde bis der Scheduler beendet ist).
-Dies ist das erwartete Verhalten.
-
-
-Output von Listing 5:
+Output von Listing 8:
 
 Alice 3
 Bob   3

@@ -1,33 +1,47 @@
 """
-Listing 3: Countdown mit einem einfachen Scheduler
+Listing 5: Wait Smarter, Not Harder
 
 Um sich alle Code-Beispiele in diesem Artikel ansehen und vergleichen zu können,
 besuchen Sie bitte:
     https://github.com/clemenssielaff/async-minus-await/compare
 """
-from time import sleep
+from time import sleep, time as now
 from typing import *
 
 
 class Scheduler:
     ready: List[Callable] = list()
+    sleeping: List[Tuple[float, Callable]] = list()
 
     @classmethod
     def call_soon(cls, func: Callable):
         cls.ready.append(func)
 
     @classmethod
+    def call_later(cls, delay: float, func: Callable):
+        deadline = now() + delay
+        cls.sleeping.append((deadline, func))
+        cls.sleeping.sort()
+
+    @classmethod
     def run(cls):
-        while cls.ready:
-            current = cls.ready.pop(0)
-            current()
+        while cls.ready or cls.sleeping:
+            if not cls.ready:
+                deadline, func = cls.sleeping.pop(0)
+                delta = deadline - now()
+                if delta > 0:
+                    sleep(delta)
+                cls.call_soon(func)
+            while cls.ready:
+                current = cls.ready.pop(0)
+                current()
 
 
 def countdown(name: str, n: int):
     if n >= 0:
         print(name, n)
-        sleep(1)
-        Scheduler.call_soon(lambda: countdown(name, n - 1))
+        # no sleep
+        Scheduler.call_later(1, lambda: countdown(name, n - 1))
 
 
 Scheduler.call_soon(lambda: countdown("Alice", 3))
@@ -35,21 +49,12 @@ Scheduler.call_soon(lambda: countdown("Bob  ", 3))
 Scheduler.run()
 
 """
-Anmerkungen zu Listing 3:
-Zeile 12 [1]: Um den Kontrollfluss zuverlässig zu steuern, darf es nur einen
-    Scheduler geben. Er ist deshalb als Singleton geschrieben.
-Zeile 30 [2]: Die Schleife wird von countdown in den Scheduler verlagert.
-    Dieser kann  somit mehrere gleichzeitige Schleifen verzahnen.
-Zeile 33 [3]: Der Scheduler kann nur Funktionen ohne Parameter ausführen,
-    countdown benötigt allerdings einen Namen und die derzeitige Zahl. Deshalb
-    wird der eigentliche Aufruf in eine parameterlose Lambda-Funktion verpackt.
-
-Die Ausführung dieses Programms dauert 8 Sekunden (6 Sekunden bis zum Ende des
-Countdowns, weitere 2 Sekunden bis der Scheduler beendet ist).
-Dies ist doppelt so lange wie erwartet.
+Die Ausführung dieses Programms dauert 4 Sekunden (3 Sekunden bis zum Ende des
+Countdowns, eine weitere Sekunde bis der Scheduler beendet ist).
+Dies ist das erwartete Verhalten.
 
 
-Listing 4: Output von Listing 3: zwei Countdowns zur selben Zeit
+Output von Listing 5:
 
 Alice 3
 Bob   3

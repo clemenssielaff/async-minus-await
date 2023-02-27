@@ -1,8 +1,7 @@
 """
-Listing 9: Ein Task besteht aus einem Generator und einem Resultat
-Listing 10: Der Scheduler kann schlafen, einen Wert erwarten oder einen produzieren
-Listing 11: Künstlich erschwerter Countdown mit einem asynchronen Produzenten
-Listing 12: Ausführung von Befehlen im Scheduler
+Listing 13: Asynchrone Queues
+Listing 14: Einfügen eines Items in eine asynchrone Queue
+Listing 15: Auslesen eines Items aus einer asynchronen Queue
 
 Um sich alle Code-Beispiele in diesem Artikel ansehen und vergleichen zu können,
 besuchen Sie bitte:
@@ -82,25 +81,54 @@ class Scheduler:
                     cls.call_soon(instruction.task)
 
 
-def producer(n: int):
-    yield Sleep(1)
-    yield Result(n - 1)
+class AsyncQueue:
+    def __init__(self):
+        self.items: List[Any] = list()
+        self.waiting: List[Task] = list()
+
+    def put(self, item: Any):
+        self.items.append(item)
+        if self.waiting:
+            Scheduler.call_soon(self.waiting.pop(0))
+
+    def get(self) -> Task:
+        def receive():
+            while not self.items:
+                self.waiting.append(task)
+                yield
+            yield Result(self.items.pop(0))
+
+        task = Task(receive())
+        return task
 
 
-def countdown(name: str, n: int):
+def producer(n: int, queue: AsyncQueue):
     while n >= 0:
-        print(name, n)
-        task = Task(producer(n))
+        queue.put(n)
+        yield Sleep(1)
+        n -= 1
+
+
+def consumer(name: str, queue: AsyncQueue):
+    while True:
+        task = queue.get()
         yield Await(task)
-        n = task.result
+        print(name, task.result)
+        if task.result == 0:
+            return
 
 
-Scheduler.call_soon(Task(countdown("Alice", 3)))
-Scheduler.call_soon(Task(countdown("Bob  ", 3)))
+bobs_queue = AsyncQueue()
+alices_queue = AsyncQueue()
+
+Scheduler.call_soon(Task(producer(3, bobs_queue)))
+Scheduler.call_soon(Task(consumer("Alice", alices_queue)))
+Scheduler.call_soon(Task(producer(3, alices_queue)))
+Scheduler.call_soon(Task(consumer("Bob  ", bobs_queue)))
 Scheduler.run()
 
 """
-Output von Listing 12:
+Output von Listing 15:
 
 Alice 3
 Bob   3
